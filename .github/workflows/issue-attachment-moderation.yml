@@ -23,7 +23,7 @@ jobs:
       EAI_ATTACHMENT_MODERATION_TRUSTED_ASSOCIATIONS: OWNER,MEMBER,COLLABORATOR
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Moderate unsafe attachments
         env:

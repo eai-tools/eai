@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -90,7 +90,7 @@ jobs:
 
       - name: Checkout enterpriseaigroup.com website
         if: steps.website-token.outcome == 'success' && steps.website-token.outputs.token != ''
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: EAI-Website/com.enterpriseaigroup
           token: ${{ steps.website-token.outputs.token }}

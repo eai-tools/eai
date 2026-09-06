@@ -42,6 +42,7 @@ const IGNORE_PREFIXES = [
   ".github/prompts/",
   ".github/skills/",
 ];
+const HIGH_RISK_TEMPLATE_PATHS = new Set(["src/app/home-client.tsx"]);
 
 type TemplateCheckAction = "add" | "review";
 type TemplateCheckCategory = "ui" | "general";
@@ -134,6 +135,10 @@ function shouldIgnoreTemplatePath(relativePath: string): boolean {
   return IGNORE_PREFIXES.some(
     (prefix) => relativePath === prefix || relativePath.startsWith(prefix),
   );
+}
+
+function isHighRiskTemplatePath(relativePath: string): boolean {
+  return HIGH_RISK_TEMPLATE_PATHS.has(relativePath);
 }
 
 function shouldAuditObjectTypeNormalization(relativePath: string): boolean {
@@ -595,8 +600,11 @@ Notes:
     for (const item of plan.items) {
       const label =
         item.category === "ui" ? chalk.magenta("ui") : chalk.dim("file");
+      const entrypointTag = isHighRiskTemplatePath(item.relativePath)
+        ? ` ${chalk.yellow("[entrypoint]")}`
+        : "";
       console.log(
-        `  ${renderAction(item.action)}  ${item.relativePath} ${chalk.dim(`[${label}]`)}`,
+        `  ${renderAction(item.action)}  ${item.relativePath} ${chalk.dim(`[${label}]`)}${entrypointTag}`,
       );
     }
 
@@ -607,6 +615,15 @@ Notes:
       ["UI files in review set", String(plan.summary.ui)],
       ["Unchanged matches", String(plan.summary.unchanged)],
     ]);
+    if (plan.items.some((item) => isHighRiskTemplatePath(item.relativePath))) {
+      out.blank();
+      out.warn(
+        "High-risk entrypoint detected: src/app/home-client.tsx controls the root app experience.",
+      );
+      out.info(
+        "Keep your app-specific home wiring unless you intentionally want to restore the template demo landing page.",
+      );
+    }
     out.blank();
     out.info("Recommended update flow:");
     out.info(

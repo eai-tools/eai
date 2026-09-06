@@ -39,6 +39,18 @@ async function createTemplateRepo(repoRoot: string): Promise<{ initialCommit: st
   await writeFileRecursive(repoRoot, 'package.json', JSON.stringify({ name: '@eai-tools/eai-app-template-fixture', version: '0.1.0' }, null, 2) + '\n');
   await writeFileRecursive(repoRoot, 'src/components/Hero.tsx', 'export function Hero() { return <div>Hero v1</div>; }\n');
   await writeFileRecursive(repoRoot, 'src/app/page.tsx', 'export default function Page() { return <Hero />; }\n');
+  await writeFileRecursive(
+    repoRoot,
+    'src/app/home-client.tsx',
+    [
+      "import { DemoPage } from '@enterpriseaigroup/demo';",
+      '',
+      'export function HomeClient() {',
+      '  return <DemoPage />;',
+      '}',
+      '',
+    ].join('\n'),
+  );
 
   await git(repoRoot, ['init']);
   await git(repoRoot, ['add', '.']);
@@ -105,6 +117,7 @@ describe('eai template check', () => {
     expectDisplayedMessage(result, 'src/components/Badge.tsx');
     expectDisplayedMessage(result, 'Files needing manual review');
     expectDisplayedMessage(result, 'UI files in review set');
+    expectDisplayedMessage(result, 'High-risk entrypoint detected: src/app/home-client.tsx controls the root app experience.');
   });
 
   test('infers template provenance from a legacy eai init scaffold commit when the manifest is missing', async () => {

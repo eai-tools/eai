@@ -5,7 +5,7 @@
 
 import { Command } from "commander";
 import { randomUUID } from "node:crypto";
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import ora from "ora";
@@ -1429,6 +1429,19 @@ function describeTemplateSnapshot(template: {
   return template.repo || "unknown";
 }
 
+async function hasTemplateDemoHomeFallback(projectRoot: string): Promise<boolean> {
+  const homeClientPath = join(projectRoot, "src", "app", "home-client.tsx");
+  try {
+    const source = await readFile(homeClientPath, "utf-8");
+    return (
+      source.includes("@enterpriseaigroup/demo") &&
+      source.includes("<DemoPage")
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function renderDoctorUpdateStatus(root: string): Promise<void> {
   out.blank();
   out.heading("Update Status");
@@ -1454,6 +1467,7 @@ async function renderDoctorUpdateStatus(root: string): Promise<void> {
   }
 
   const resolvedManifest = await resolveProjectManifest(root);
+  const demoHomeFallbackDetected = await hasTemplateDemoHomeFallback(root);
   const manifest = resolvedManifest.manifest;
   if (!manifest) {
     out.info(
@@ -1462,6 +1476,14 @@ async function renderDoctorUpdateStatus(root: string): Promise<void> {
     out.info(
       "Template and UI component drift is not auto-merged yet; use `eai template check` before copying changes manually.",
     );
+    if (demoHomeFallbackDetected) {
+      out.warn(
+        "Detected template demo fallback in src/app/home-client.tsx. Confirm this is intentional for this app.",
+      );
+      out.info(
+        "If this app should render a product-specific home page, restore your local home-client wiring before deploy.",
+      );
+    }
     return;
   }
 
@@ -1551,10 +1573,23 @@ async function renderDoctorUpdateStatus(root: string): Promise<void> {
     out.info(
       "The CLI does not auto-merge template or UI component updates into existing repos yet. Review `eai template check` before applying those changes manually.",
     );
+    if (demoHomeFallbackDetected) {
+      out.warn(
+        "Detected template demo fallback in src/app/home-client.tsx while template drift is present.",
+      );
+      out.info(
+        "Keep your app-specific home-client wiring unless you intentionally want the demo landing page.",
+      );
+    }
     return;
   }
 
   out.success(`Template snapshot: ${projectTemplateLabel}`);
+  if (demoHomeFallbackDetected) {
+    out.warn(
+      "Detected template demo fallback in src/app/home-client.tsx. Confirm this is intentional for this app.",
+    );
+  }
 }
 
 export const doctorCommand = new Command("doctor")
